@@ -6,11 +6,7 @@
 #include "Commands.h"
 #include <algorithm>
 #include <iostream>
-#include <memory>
 
-InputManager::InputManager()
-{
-}
 
 InputManager::~InputManager()
 {
@@ -135,3 +131,18 @@ std::vector<std::shared_ptr<Command>> InputManager::GetCommandsToFire()
 	return m_CommandsToFire;
 }
 
+SDL::SDL(SDL_EventType type, int32_t keyOrButton, unsigned int playerIndex)
+	: event{}
+	, playerIndex{ playerIndex }
+{
+	event.type = type;
+	event.key.keysym.sym = keyOrButton;
+	event.button.button = UINT8(keyOrButton);
+}
+
+ControllerButton::ControllerButton(ButtonType buttonType, ControllerButtonValue buttonValue)
+	: buttonType{ buttonType }
+	, buttonValue{ buttonValue }
+	, pressedLastFrame{ false }
+{
+}

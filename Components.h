@@ -1,13 +1,22 @@
 #pragma once
 #include "Observe.h"
+#include "Vector2f.h"
+#include "Transform.h"
+#include <memory>
+#include <map>
 
 class GameObject;
-
+class RenderComponent;
+class Texture;
+typedef struct _TTF_Font TTF_Font;
+struct Color4f;
+class Scene;
 
 class Component
 {
 public:
 	Component(GameObject* parent);
+
 	virtual ~Component() = default;
 	virtual void Update() = 0;
 
@@ -22,17 +31,27 @@ public:
 	virtual ~ObserverComponent() = default;
 };
 
-class Texture2D;
+class ObservableComponent : public Component, public Observable
+{
+public:
+	ObservableComponent(GameObject* parent);
+	virtual ~ObservableComponent() = default;
+};
+
+/// 
+/// InputComponent
+///
 
 class InputComponent final : public Component
 {
 public:
-	explicit InputComponent(GameObject* parent, unsigned int playerIndex);
+	explicit InputComponent(GameObject* parent, unsigned int playerIndex, bool isPlayer);
 	~InputComponent();
 
 	void Update() override;
 
 	unsigned int GetPlayerIndex() const;
+	bool IsPlayer()const;
 
 	InputComponent(const InputComponent& other) = delete;
 	InputComponent(InputComponent&& other) = delete;
@@ -40,51 +59,21 @@ public:
 	InputComponent& operator=(InputComponent&& other) = delete;
 private:
 	unsigned int m_PlayerIndex;
+	bool m_IsPlayer;
 };
-/// 
-/// RenderComponent
-///
-class RenderComponent final
-{
-public:
-	RenderComponent(const std::string& filename, GameObject* parent);
-	RenderComponent(GameObject* parent);
-	~RenderComponent();
-
-	void Render()const;
-
-	void SetPosition(float x, float y);
-	void SetTexture(const std::string& filename);
-	void SetTexture(Texture2D* texture2D);
-	void MarkDead();
-
-	bool GetMarkedDead();
-
-	RenderComponent(const RenderComponent& other) = delete;
-	RenderComponent(RenderComponent&& other) = delete;
-	RenderComponent& operator=(const RenderComponent& other) = delete;
-	RenderComponent& operator=(RenderComponent&& other) = delete;
-private:
-	Texture2D* m_pTexture;
-	GameObject* m_pParent;
-	bool m_MarkedDead;
-};
-
 
 /// 
 /// TextComponent
 ///
-class Font;
 
-class TextComponent final : public ObserverComponent
+class TextComponent final : public Component
 {
 public:
-	explicit TextComponent(const std::string& text, Font* font, GameObject* parent, RenderComponent* renderComponent);
+	explicit TextComponent(const std::string& text, const std::string& fontPath, int ptSize, const Color4f& textColor
+		, GameObject* parent, RenderComponent* renderComponent);
 	~TextComponent();
 
 	void Update() override;
-
-	virtual void OnNotify(GameObject* gameObject, Event event, unsigned int playerIndex) override;
 
 	void SetText(const std::string& text);
 	void SetPosition(float x, float y);
@@ -95,41 +84,15 @@ public:
 	TextComponent& operator=(TextComponent&& other) = delete;
 private:
 	RenderComponent* m_pRenderComponent;
-	bool m_NeedsUpdate;
-	std::string m_Text;
-	Font* m_pFont;
+	TTF_Font* m_pFont;
+	Color4f* m_pColor;
 };
 
-/// 
-/// Fps component
-///
-
-class FpsComponent final : public Component
-{
-public:
-	explicit FpsComponent(TextComponent* textComponent, GameObject* parent);
-	~FpsComponent() = default;
-
-	void Update() override;
-
-	void SetPosition(float x, float y);
-
-	FpsComponent(const FpsComponent& other) = delete;
-	FpsComponent(FpsComponent&& other) = delete;
-	FpsComponent& operator=(const FpsComponent& other) = delete;
-	FpsComponent& operator=(FpsComponent&& other) = delete;
-private:
-	TextComponent* m_pTextComponent;
-	float m_AccumulatedTime;
-	float m_FrameUpdateInterval;
-	int m_FrameCount;
-	int m_PrevAverageFps;
-};
 
 class LifeComponent final : public ObserverComponent
 {
 public:
-	explicit LifeComponent( GameObject* parent, unsigned int maxLives, unsigned int playerIndex);
+	explicit LifeComponent( GameObject* parent, unsigned int maxLives, TextComponent* textComponent, unsigned int playerIndex);
 	~LifeComponent() = default;
 
 	void Update() override;
@@ -143,15 +106,16 @@ public:
 	LifeComponent& operator=(const LifeComponent& other) = delete;
 	LifeComponent& operator=(LifeComponent&& other) = delete;
 private:
+	TextComponent* m_pTextComponent;
+	unsigned int m_PlayerIndex;
 	unsigned int m_CurrentLives;
 	unsigned int m_MaxLives;
-	unsigned int m_PlayerIndex;
 };
 
 class ScoreComponent final : public ObserverComponent
 {
 public:
-	explicit ScoreComponent(GameObject* parent, unsigned int playerIndex);
+	explicit ScoreComponent(GameObject* parent, TextComponent* textComponent, unsigned int playerIndex);
 	~ScoreComponent() = default;
 
 	void Update() override;
@@ -165,6 +129,133 @@ public:
 	ScoreComponent& operator=(const ScoreComponent& other) = delete;
 	ScoreComponent& operator=(ScoreComponent&& other) = delete;
 private:
-	unsigned int m_CurrentScore;
+	TextComponent* m_pTextComponent;
 	unsigned int m_PlayerIndex;
+	unsigned int m_CurrentScore;
+};
+
+/// 
+/// MoveComponent
+///
+
+class MoveComponent final : public ObserverComponent
+{
+public:
+	explicit MoveComponent(GameObject* parent, unsigned int playerIndex, float speedX, float speedYUp, float speedYDown, float acceleration = 0.f);
+	~MoveComponent() = default;
+
+	void Update() override;
+
+	virtual void OnNotify(GameObject * gameObject, Event event, unsigned int playerIndex) override;
+
+	Vector2f GetVelocity()const;
+
+	MoveComponent(const MoveComponent & other) = delete;
+	MoveComponent(MoveComponent && other) = delete;
+	MoveComponent& operator=(const MoveComponent & other) = delete;
+	MoveComponent& operator=(MoveComponent && other) = delete;
+private:
+	unsigned int m_PlayerIndex;
+	Vector2f m_Velocity;
+	float m_Acceleration;
+	float m_SpeedX;
+	float m_SpeedYUp;
+	float m_SpeedYDown;
+	bool m_CanUpdate;
+};
+
+/// 
+/// LevelComponent
+///
+
+class LevelComponent final : public Component
+{
+public:
+	explicit LevelComponent(GameObject* parent);//vec of weak ptr later
+	~LevelComponent() = default;
+
+	void LoadLevel(Scene* scene, GameObject* qBert, const Rectf& qBertOffsets, ScoreComponent* scoreComponent);
+	void Update() override;
+
+	LevelComponent(const LevelComponent& other) = delete;
+	LevelComponent(LevelComponent&& other) = delete;
+	LevelComponent& operator=(const LevelComponent& other) = delete;
+	LevelComponent& operator=(LevelComponent&& other) = delete;
+private:
+	//std::vector<GameObject*> m_pTiles;
+};
+
+/// 
+/// CollisionComponent
+///
+ 
+class CollisionComponent final : public ObservableComponent
+{
+public:
+	explicit CollisionComponent(GameObject* parent, float xOffset, float yOffset);
+	~CollisionComponent() = default;
+
+	void Update() override;
+
+	void AddElement(GameObject* gameObject);
+	void SetReverseTextures(bool reverseTextures);
+
+	CollisionComponent(const CollisionComponent& other) = delete;
+	CollisionComponent(CollisionComponent&& other) = delete;
+	CollisionComponent& operator=(const CollisionComponent& other) = delete;
+	CollisionComponent& operator=(CollisionComponent&& other) = delete;
+private:
+	std::vector<GameObject*> m_pElements;
+	bool m_ReverseTextures;
+	float m_Value;
+	float m_ElementsXOffset;
+	float m_ElementsYOffset;
+};
+
+class IndexComponent final : public Component
+{
+public:
+	IndexComponent(GameObject* parent, unsigned int index);
+	unsigned int GetIndex()const;
+	void Update()override;
+	void SetIndex(unsigned int index);
+
+	IndexComponent(const IndexComponent& other) = delete;
+	IndexComponent(IndexComponent&& other) = delete;
+	IndexComponent& operator=(const IndexComponent& other) = delete;
+	IndexComponent& operator=(IndexComponent&& other) = delete;
+private:
+	unsigned int m_Index;
+};
+
+class KillBoxComponent final : public ObservableComponent
+{
+public:
+	KillBoxComponent(GameObject* parent, const Rectf& shape);
+
+	void Update() override;
+
+	KillBoxComponent(const KillBoxComponent& other) = delete;
+	KillBoxComponent(KillBoxComponent&& other) = delete;
+	KillBoxComponent& operator=(const KillBoxComponent& other) = delete;
+	KillBoxComponent& operator=(KillBoxComponent&& other) = delete;
+private:
+	Rectf m_Shape;
+};
+
+class FComponent final : public ObserverComponent
+{
+public:
+	FComponent(GameObject* parent, Point2f spawnPos);
+
+	void Update() override;
+
+	virtual void OnNotify(GameObject* gameObject, Event event, unsigned int playerIndex) override;
+
+	FComponent(const FComponent& other) = delete;
+	FComponent(FComponent&& other) = delete;
+	FComponent& operator=(const FComponent& other) = delete;
+	FComponent& operator=(FComponent&& other) = delete;
+private:
+	Point2f m_SpawnPos;
 };

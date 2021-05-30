@@ -3,25 +3,36 @@
 
 struct SDL_Window;
 struct SDL_Renderer;
+typedef void* SDL_GLContext;
 
-
-class Texture2D;
+class Texture;
 /**
  * Simple RAII wrapper for the SDL renderer
  */
 class Renderer final : public Singleton<Renderer>
 {
+	friend class Singleton;
 public:
 	void Init(SDL_Window* window);
 	void Render() const;
 	void Destroy();
 
-	void RenderTexture(const Texture2D& texture, float x, float y) const;
-	void RenderTexture(const Texture2D& texture, float x, float y, float width, float height) const;
+	int GetWindowWidth()const;
+	int GetWindowHeight()const;
 
-	SDL_Renderer* GetSDLRenderer() const { return m_pRenderer; }
+	//SDL_Renderer* GetSDLRenderer() const { return m_pRenderer; }
 private:
-	SDL_Renderer* m_pRenderer{};
+	Renderer();
+
+	void RenderImgui()const;
+	void RenderDebugImGui()const;
+
+	//SDL_Renderer* m_pRenderer;
+	SDL_Window* m_pWindow;
+	SDL_GLContext m_pContext;
+	bool m_RenderImGui;
+	bool m_ShowDemo;
+	bool m_ShowDebug;
 };
 
 

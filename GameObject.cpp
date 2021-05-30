@@ -1,9 +1,11 @@
 #include "MiniginPCH.h"
 #include "GameObject.h"
-#include "ResourceManager.h"
 #include "Renderer.h"
 #include "Components.h"
+#include "ComponentsNoInheritance.h"
 #include "Font.h"
+#include "Scene.h"
+
 
 GameObject::GameObject()
 	: m_pRenderComponents {}
@@ -43,25 +45,30 @@ void GameObject::Update()
 
 void GameObject::SetPosition(float x, float y)
 {
-	m_Transform.get()->SetPosition(x, y, 0.0f);
+	m_Transform.get()->SetPosition(x, y);
 }
 
 
-RenderComponent* GameObject::AddRenderComponent(const std::string& filename, std::vector<RenderComponent*>& sceneVec)
+RenderComponent* GameObject::AddRenderComponent(const std::string& filename, Scene* currentScene, unsigned int drawOrder, float scale)
 {
-	RenderComponent* renderComp = new RenderComponent(filename, this);
+	RenderComponent* renderComp = new RenderComponent(filename, this, drawOrder, scale);
+
 	m_pRenderComponents.push_back(renderComp);
-	sceneVec.push_back(renderComp);
+	currentScene->AddRenderComponent(renderComp);
+
 	return renderComp;
 }
 
-RenderComponent* GameObject::AddRenderComponent(std::vector<RenderComponent*>& sceneVec)
+RenderComponent* GameObject::AddRenderComponent( Scene* currentScene, unsigned int drawOrder, float scale)
 {
-	RenderComponent* renderComp = new RenderComponent(this);
+	RenderComponent* renderComp = new RenderComponent(this, drawOrder, scale);
+
 	m_pRenderComponents.push_back(renderComp);
-	sceneVec.push_back(renderComp);
+	currentScene->AddRenderComponent(renderComp);
+
 	return renderComp;
 }
+
 
 
 void GameObject::AddComponent(Component* component)
@@ -70,13 +77,20 @@ void GameObject::AddComponent(Component* component)
 }	
 
 
-std::shared_ptr<Transform> GameObject::GetTransform()
+std::shared_ptr<Transform> GameObject::GetTransform() const
 {
 	return m_Transform;
 }
 
 
-bool GameObject::GetMarkedDead()
+RenderComponent* GameObject::GetRenderComponent() const
+{
+	if(!m_pRenderComponents.empty())
+		return m_pRenderComponents[0];
+	return nullptr;
+}
+
+bool GameObject::GetMarkedDead() const
 {
 	return m_MarkedDead;
 }

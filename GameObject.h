@@ -6,6 +6,8 @@ class TextComponent;
 class Component;
 class FpsComponent;
 class Font;
+class Scene;
+typedef struct _TTF_Font TTF_Font;
 
 
 class GameObject final
@@ -18,17 +20,18 @@ public:
 	void Update();// update all non render comps
 
 	void SetPosition(float x, float y);
-	RenderComponent* AddRenderComponent(const std::string& filename, std::vector<RenderComponent*>& sceneVec);
-	RenderComponent* AddRenderComponent(std::vector<RenderComponent*>& sceneVec);
+	RenderComponent* AddRenderComponent(const std::string& filename, Scene* currentScene, unsigned int drawOrder = 0, float scale = 1.f);
+	RenderComponent* AddRenderComponent( Scene* currentScene, unsigned int drawOrder = 0, float scale = 1.f);
+
 	
 	void AddComponent(Component* component);
 
 	template<typename Type>
-	Type* GetComponent();
-	std::shared_ptr<Transform> GetTransform();
+	Type* GetComponent()const;
+	std::shared_ptr<Transform> GetTransform()const;
 	//get components
-	//get rendercomp(s)
-	bool GetMarkedDead();
+	RenderComponent* GetRenderComponent() const;
+	bool GetMarkedDead()const;
 
 	void MarkDead();
 
@@ -48,7 +51,7 @@ private:
 };
 
 template<typename Type>
-inline Type* GameObject::GetComponent()
+inline Type* GameObject::GetComponent() const
 {
 	for (Component* comp : m_pComponents)
 	{

@@ -2,7 +2,8 @@
 #include "Scene.h"
 #include "GameObject.h"
 #include "Components.h"
-
+#include "ComponentsNoInheritance.h"
+#include <algorithm>
 
 //unsigned int Scene::m_IdCounter = 0;
 
@@ -29,6 +30,8 @@ void Scene::AddGameObject( GameObject* object)
 
 void Scene::Update()
 {
+	FpsComponent::GetInstance().Update();
+
 	for(GameObject* object : m_pObjects)
 	{
 		object->Update();
@@ -57,6 +60,8 @@ void Scene::Update()
 			return false;
 		});
 		m_pRenderComponents.erase(itRender, m_pRenderComponents.end());
+		//Sort
+		SortRenderComponents();
 }
 
 void Scene::Render() const
@@ -67,6 +72,14 @@ void Scene::Render() const
 	}
 }
 
+void Scene::SortRenderComponents()
+{
+	std::sort(m_pRenderComponents.begin(), m_pRenderComponents.end(), [](const RenderComponent* renderComp1, const RenderComponent* renderComp2)
+		{
+			return renderComp1->GetDrawOrder() < renderComp2->GetDrawOrder();
+		});
+}
+
 std::string Scene::GetName() const
 {
 	return m_Name;
@@ -75,5 +88,12 @@ std::string Scene::GetName() const
 std::vector<RenderComponent*>& Scene::GetRenderComponentsVec() 
 {
 	return m_pRenderComponents;
+}
+
+void Scene::AddRenderComponent(RenderComponent* renderComp)
+{
+	m_pRenderComponents.push_back(renderComp);
+	//Sort
+	SortRenderComponents();
 }
 

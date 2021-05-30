@@ -10,8 +10,36 @@ public:
 	virtual ~Command() = default;
 	virtual void Execute(GameObject* gameObject) = 0;
 	virtual unsigned int GetPlayerIndex();
-private:
+protected:
 	unsigned int m_PlayerIndex;
+};
+
+class UpCommand final : public Command
+{
+public:
+	UpCommand(unsigned int playerIndex);
+	virtual void Execute(GameObject* gameObject) override;
+};
+
+class DownCommand final : public Command
+{
+public:
+	DownCommand(unsigned int playerIndex);
+	virtual void Execute(GameObject* gameObject) override;
+};
+
+class LeftCommand final : public Command
+{
+public:
+	LeftCommand(unsigned int playerIndex);
+	virtual void Execute(GameObject* gameObject) override;
+};
+
+class RightCommand final : public Command
+{
+public:
+	RightCommand(unsigned int playerIndex);
+	virtual void Execute(GameObject* gameObject) override;
 };
 
 class KillCommand final : public Command

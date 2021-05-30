@@ -8,7 +8,12 @@ enum class Event
 	ColorChange,
 	DefeatCoily,
 	LevelFinish,
-	CatchSAndS
+	CatchSAndS,
+	MoveUp,
+	MoveDown,
+	MoveRight,
+	MoveLeft,
+	Collided,
 };
 
 class Observer
@@ -21,9 +26,10 @@ public:
 class Observable
 {
 public:
+	virtual ~Observable() = default;
+
 	void AddObserver(Observer* observer);
 	void RemoveObserver(Observer* observer);
-
 protected:
 	void Notify(GameObject* gameObject, Event event, unsigned int playerIndex);
 private:

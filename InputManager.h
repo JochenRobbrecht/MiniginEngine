@@ -1,7 +1,7 @@
 #pragma once
 #include "Singleton.h" 
 #include <vector>
-#include <SDL.h>
+#include <SDL_events.h>
 
 class Command;
 
@@ -32,31 +32,19 @@ struct ControllerButton
 {
 	ButtonType buttonType;
 	ControllerButtonValue buttonValue;
-	bool pressedLastFrame = false;
-	ControllerButton(ButtonType buttonType, ControllerButtonValue buttonValue)
-		: buttonType{ buttonType }
-		, buttonValue{ buttonValue }
-		, pressedLastFrame{ false }
-	{ }
+	bool pressedLastFrame;
+	ControllerButton(ButtonType buttonType, ControllerButtonValue buttonValue);
 };
 struct SDL
 {
 	SDL_Event event;
 	unsigned int playerIndex;
-	SDL(SDL_EventType type, int32_t keyOrButton, unsigned int playerIndex)
-		: event{}
-		, playerIndex{ playerIndex }
-	{
-		event.type = type;
-		event.key.keysym.sym = keyOrButton;
-		event.button.button = UINT8(keyOrButton);
-	}
+	SDL(SDL_EventType type, int32_t keyOrButton, unsigned int playerIndex);
 };
 
 class InputManager : public Singleton<InputManager>
 {
 public:
-	InputManager();
 	~InputManager();
 
 	void ProcessInput(bool& doContinue);

@@ -1,7 +1,7 @@
 #include "MiniginPCH.h"
 #include "SoundSystem.h"
 #include "../3rdParty/Simple-SDL2-Audio-master/src/audio.c"
-
+#include <mutex>
 
 
 LogNullSoundSystem AudioServiceLocator::m_Default;
@@ -41,8 +41,8 @@ void LogNullSoundSystem::Play(const std::string& pathString, const float volume)
 
 
 SDLSoundSystem::SDLSoundSystem()
-	:m_SoundQueue{}
-	,m_Mutex{}
+	: m_SoundQueue{}
+	, m_Mutex{ }
 {
 	initAudio();
 }
@@ -68,10 +68,19 @@ void SDLSoundSystem::Update()
 
 void SDLSoundSystem::Play(const std::string& pathString, const float volume)
 {
-	if (m_SoundQueue.size() >= AUDIO_MAX_SOUNDS)return;
-
 	m_Mutex.lock();
+	if (m_SoundQueue.size() >= AUDIO_MAX_SOUNDS)
+	{
+		m_Mutex.unlock();
+		return;
+	}
+
 	m_SoundQueue.push_back(SoundMessage{ pathString,volume });	
 	m_Mutex.unlock();
 }
 
+SoundMessage::SoundMessage(const std::string& pathString, const float volume)
+	: pathString{ pathString }
+	, volume{ volume }
+{
+}

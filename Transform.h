@@ -1,17 +1,14 @@
 #pragma once
-#pragma warning(push)
-#pragma warning (disable:4201)
-#include <glm/glm.hpp>
-#include <glm/gtx/compatibility.hpp>
-#pragma warning(pop)
+#include "Structs.h"
 
 
 class Transform final
 {
 public:
-	const glm::vec3& GetPosition() const { return m_Position; }
-	void SetPosition(float x, float y, float z);
+	const Point2f GetPosition() const;
+	void SetPosition(float x, float y);
+	void SetPosition(Point2f pos);
 private:
-	glm::vec3 m_Position;
+	Point2f m_Position;
 };
 

@@ -1,6 +1,6 @@
 #pragma once
-#include "../3rdParty/Simple-SDL2-Audio-master/src/audio.h"
-#include <map>
+//#include "../3rdParty/Simple-SDL2-Audio-master/src/audio.h"
+//#include <map>
 #include <list>
 #include <mutex>
 
@@ -10,11 +10,7 @@ struct SoundMessage
 {
 	std::string pathString;
 	const float volume;
-	SoundMessage(const std::string& pathString, const float volume = 100.f)
-		:pathString{ pathString }
-		,volume{volume}
-	{
-	}
+	SoundMessage(const std::string& pathString, const float volume = 100.f);
 };
 
 //BASE

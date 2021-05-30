@@ -4,19 +4,15 @@
 #include "InputManager.h"
 #include "SceneManager.h"
 #include "Renderer.h"
-#include "ResourceManager.h"
-#include <SDL.h>
 #include "GameObject.h"
 #include "Scene.h"
 #include "Components.h"
+#include "ComponentsNoInheritance.h"
 #include "Time.h"
 #include "Commands.h"
 #include "SoundSystem.h"
 #include <thread>
-
-
-using namespace std;
-using namespace std::chrono;
+#include <SDL.h>
 
 Minigin::Minigin()
 	:m_MsPerFrame{}
@@ -36,21 +32,24 @@ void Minigin::Initialize()
 		throw std::runtime_error(std::string("SDL_Init Error: ") + SDL_GetError());
 	}
 
-	m_Window = SDL_CreateWindow(
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+
+	m_pWindow = SDL_CreateWindow(
 		"Programming 4 assignment",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
+		1080,
 		640,
-		480,
 		SDL_WINDOW_OPENGL
 	);
-	if (m_Window == nullptr) 
+
+	if (m_pWindow == nullptr) 
 	{
 		throw std::runtime_error(std::string("SDL_CreateWindow Error: ") + SDL_GetError());
 	}
-
-	Renderer::GetInstance().Init(m_Window);
-	AudioServiceLocator::RegisterSoundSystem(new SDLSoundSystem());
+	
+	Renderer::GetInstance().Init(m_pWindow);
 }
 
 /**
@@ -58,22 +57,25 @@ void Minigin::Initialize()
  */
 void Minigin::LoadGame()
 {
+	//auto& inputManager = InputManager::GetInstance();
+	//inputManager.AddCommand(SDL({})
+	/*
 	//SCENES
 	Scene* scene = SceneManager::GetInstance().CreateScene("Demo");
 
 	//GAMEOBJECTS
 	GameObject* backGround = new GameObject();
-	backGround->AddRenderComponent("background.jpg", scene->GetRenderComponentsVec());
+	backGround->AddRenderComponent("background.jpg", scene);
 	scene->AddGameObject(backGround);
 
 	GameObject* logo = new GameObject();
-	RenderComponent* renderComp = logo->AddRenderComponent("logo.png", scene->GetRenderComponentsVec());
+	RenderComponent* renderComp = logo->AddRenderComponent("logo.png", scene);
 	renderComp->SetPosition(216, 180);
 	scene->AddGameObject(logo);
 
 
 	GameObject* title = new GameObject();
-	renderComp = title->AddRenderComponent(scene->GetRenderComponentsVec());
+	renderComp = title->AddRenderComponent(scene);
 	Font* font = ResourceManager::GetInstance().LoadFont("Lingua.otf", 36);
 	TextComponent* textComp{ new TextComponent("Programming 4 Assignment", font, title, renderComp) };
 	title->AddComponent(textComp);
@@ -81,15 +83,9 @@ void Minigin::LoadGame()
 	scene->AddGameObject(title);
 
 	//add FpsComponent
-	GameObject* fps = new GameObject();
-	renderComp = fps->AddRenderComponent(scene->GetRenderComponentsVec());
-	font = ResourceManager::GetInstance().LoadFont("Lingua.otf", 36);
-	textComp = new TextComponent("0", font, fps, renderComp);
-	textComp->SetPosition(50, 80);
-	FpsComponent* fpsComponent{ new FpsComponent(textComp,fps) };
-	fps->AddComponent(textComp);
-	fps->AddComponent(fpsComponent);
-	scene->AddGameObject(fps);
+	
+	//FpsComponent* fpsComponent{ &FpsComponent::GetInstance()};
+
 
 
 	unsigned int nrPlayers{ 3 };
@@ -99,7 +95,7 @@ void Minigin::LoadGame()
 		GameObject* Qbert = new GameObject();
 		scene->AddGameObject(Qbert);
 
-		renderComp = Qbert->AddRenderComponent(scene->GetRenderComponentsVec());
+		renderComp = Qbert->AddRenderComponent(scene);
 		font = ResourceManager::GetInstance().LoadFont("Lingua.otf", 36);
 		textComp = new TextComponent("Qbert " + std::to_string(playerIndex), font, Qbert, renderComp);
 		textComp->SetPosition(50 , 300 + float(50 * playerIndex));
@@ -113,7 +109,7 @@ void Minigin::LoadGame()
 		GameObject* lifeQbert = new GameObject();
 		scene->AddGameObject(lifeQbert);
 
-		renderComp = lifeQbert->AddRenderComponent(scene->GetRenderComponentsVec());
+		renderComp = lifeQbert->AddRenderComponent(scene);
 		font = ResourceManager::GetInstance().LoadFont("Lingua.otf", 36);
 		textComp = new TextComponent(std::to_string(maxLives) + " lives", font, lifeQbert, renderComp);
 		textComp->SetPosition(200, 300 + float(50 * playerIndex));
@@ -125,7 +121,7 @@ void Minigin::LoadGame()
 		GameObject* scoreQbert = new GameObject();
 		scene->AddGameObject(scoreQbert);
 
-		renderComp = scoreQbert->AddRenderComponent(scene->GetRenderComponentsVec());
+		renderComp = scoreQbert->AddRenderComponent(scene);
 		font = ResourceManager::GetInstance().LoadFont("Lingua.otf", 36);
 		textComp = new TextComponent("Score: 0", font, scoreQbert, renderComp);
 		textComp->SetPosition(350, 300 + float(50 * playerIndex));
@@ -144,12 +140,12 @@ void Minigin::LoadGame()
 		if (playerIndex == 2)// both keyboard/mouse and controller for same commands
 		{
 
-			inputManager.AddCommand({ SDL_KEYDOWN ,SDLK_c ,playerIndex }, colorChangeCommand);
-			inputManager.AddCommand({ SDL_KEYDOWN ,SDLK_l ,playerIndex }, levelFinishCommand);
-			inputManager.AddCommand({ SDL_KEYDOWN ,SDLK_d ,playerIndex }, defeatCoilyCommand);
-			inputManager.AddCommand({ SDL_KEYDOWN ,SDLK_r ,playerIndex }, catchSAndSCommand);
+			inputManager.AddCommand({ SDL_KEYDOWN, SDLK_c, playerIndex }, colorChangeCommand);
+			inputManager.AddCommand({ SDL_KEYDOWN, SDLK_l, playerIndex }, levelFinishCommand);
+			inputManager.AddCommand({ SDL_KEYDOWN, SDLK_d, playerIndex }, defeatCoilyCommand);
+			inputManager.AddCommand({ SDL_KEYDOWN, SDLK_r, playerIndex }, catchSAndSCommand);
 
-			inputManager.AddCommand({ SDL_MOUSEBUTTONDOWN ,SDL_BUTTON_LEFT ,playerIndex}, killCommand);
+			inputManager.AddCommand({ SDL_MOUSEBUTTONDOWN, SDL_BUTTON_LEFT, playerIndex }, killCommand);
 
 			inputManager.AddCommand({ ButtonType::ButtonDown, ControllerButtonValue::A }, killCommand);
 			inputManager.AddCommand({ ButtonType::ButtonDown, ControllerButtonValue::Left }, colorChangeCommand);
@@ -177,63 +173,55 @@ void Minigin::LoadGame()
 		defeatCoilyCommand->AddObserver(scoreQbert->GetComponent<TextComponent>());
 		catchSAndSCommand->AddObserver(scoreQbert->GetComponent<TextComponent>());
 	}
+	*/
 }
 
 void Minigin::Cleanup()
 {
 	Renderer::GetInstance().Destroy();
-	AudioServiceLocator::Destroy();
-	SDL_DestroyWindow(m_Window);
-	m_Window = nullptr;
+	SDL_DestroyWindow(m_pWindow);
+	m_pWindow = nullptr;
 	SDL_Quit();
 }
 
 void Minigin::Run()
 {
-	Initialize();
-
-	// tell the resource manager where he can find the game data
-	ResourceManager::GetInstance().Init("../Data/");
-
-	LoadGame();
-
-	std::cout << "Press \"l\" to push a sound to the back of the queue!\n";
-
 	{
 		auto& renderer = Renderer::GetInstance();
 		auto& sceneManager = SceneManager::GetInstance();
 		auto& inputManager = InputManager::GetInstance();
 
-		sceneManager.SetScene("Demo");
-
 		bool doContinue = true;
-		auto prevTime = high_resolution_clock::now();
+		auto prevTime = std::chrono::high_resolution_clock::now();
+
+		//THREADS
+		auto audioThread = std::thread(&AudioServiceLocator::Update);
+
 		while (doContinue)
 		{
-			const auto currentTime = high_resolution_clock::now();
+			const auto currentTime = std::chrono::high_resolution_clock::now();
 			auto elapsedSec = currentTime - prevTime;
 			prevTime = currentTime;
-
 
 			//INPUT
 			inputManager.ProcessInput(doContinue);
 
 			//UPDATE
 			//float secondsPerFrame{ m_MsPerFrame / 1000.f };
-			auto audioThread = std::thread(AudioServiceLocator::Update);
 
-			Time::GetInstance().SetElapsedSec(duration<float>(elapsedSec).count());//if fps capped, pass secondsPerFrame
+			Time::GetInstance().SetElapsedSec(std::chrono::duration<float>(elapsedSec).count());//if fps capped, pass secondsPerFrame
 			sceneManager.Update();
 
 
 			//RENDER
 			renderer.Render();
 
-			if(audioThread.joinable())audioThread.join();
 			//FPS CAP
 			//auto sleepTime{ milliseconds(m_MsPerFrame) - elapsedSec };
 			//this_thread::sleep_for(sleepTime);
 		}
+
+		if (audioThread.joinable())audioThread.join();
 	}
 
 	Cleanup();

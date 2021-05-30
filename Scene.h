@@ -12,9 +12,12 @@ public:
 	
 	void Update();
 	void Render() const; // update render components
+	void SortRenderComponents();
 
 	std::string GetName()const;
 	std::vector<RenderComponent*>& GetRenderComponentsVec();
+
+	void AddRenderComponent(RenderComponent* renderComp);
 
 	~Scene();
 	Scene(const Scene& other) = delete;
